@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>CarShare Market</title>
+    <!-- Telegram Web App SDK -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        :root {
+            --bg-color: var(--tg-theme-bg-color, #0f1115);
+            --card-bg: var(--tg-theme-secondary-bg-color, #1a1d24);
+            --text-main: var(--tg-theme-text-color, #ffffff);
+            --text-secondary: var(--tg-theme-hint-color, #9ca3af);
+            --accent: var(--tg-theme-button-color, #ff5722);
+            --accent-hover: var(--tg-theme-button-color, #ff7043);
+            --success: #10b981;
+            --premium: #fbbf24;
+            --border: var(--tg-theme-section-bg-color, #2a2e38);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            line-height: 1.6;
+            padding: 0;
+            margin: 0;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Header */
+        header {
+            background: var(--card-bg);
+            padding: 12px 16px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.2rem;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .logo-icon {
+            background: var(--accent);
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+        }
+
+        .logo span { color: var(--accent); }
+
+        .cart-btn {
+            background: var(--accent);
+            border: none;
+            color: var(--tg-theme-button-text-color, white);
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.9rem;
+        }
+
+        .cart-count {
+            background: var(--tg-theme-button-text-color, white);
+            color: var(--accent);
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: bold;
+        }
+
+        /* Hero */
+        .hero {
+            text-align: center;
+            padding: 40px 16px;
+            background: radial-gradient(circle at top, rgba(255, 87, 34, 0.15), transparent 70%);
+        }
+
+        .hero h1 {
+            font-size: 1.8rem;
+            margin-bottom: 12px;
+            line-height: 1.3;
+        }
+
+        .hero h1 span { color: var(--accent); }
+
+        .hero p {
+            font-size: 1rem;
+            color: var(--text-secondary);
+            margin-bottom: 20px;
+        }
+
+        .hero-stats {
+            display: flex;
+            justify-content: center;
+            gap: 24px;
+            margin-top: 24px;
+            flex-wrap: wrap;
+        }
+
+        .stat-item { text-align: center; }
+
+        .stat-number {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: var(--accent);
+        }
+
+        .stat-label {
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+        }
+
+        /* Catalog */
+        .catalog-section {
+            padding: 24px 16px;
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+            font-weight: 700;
+        }
+
+        .filters {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+            overflow-x: auto;
+            padding-bottom: 8px;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .filter-btn {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: 0.3s;
+            font-weight: 500;
+            font-size: 0.85rem;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        .filter-btn.active {
+            background: var(--accent);
+            color: var(--tg-theme-button-text-color, white);
+            border-color: var(--accent);
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 16px;
+        }
+
+        /* Product Card */
+        .card {
+            background-color: var(--card-bg);
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .card-header {
+            height: 120px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+            font-weight: 800;
+            color: white;
+            position: relative;
+            text-align: center;
+            padding: 10px;
+        }
+
+        .badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 0.7rem;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .badge-premium {
+            background: var(--premium);
+            color: #000;
+        }
+
+        .badge-standard {
+            background: rgba(255,255,255,0.2);
+            color: white;
+        }
+
+        .card-body {
+            padding: 16px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .card-title {
+            font-size: 1.1rem;
+            margin-bottom: 6px;
+            font-weight: 600;
+        }
+
+        .card-desc {
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            margin-bottom: 12px;
+            flex: 1;
+        }
+
+        .card-features {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+
+        .feature-tag {
+            font-size: 0.7rem;
+            background: rgba(255, 87, 34, 0.1);
+            color: var(--accent);
+            padding: 3px 8px;
+            border-radius: 4px;
+            border: 1px solid rgba(255, 87, 34, 0.2);
+        }
+
+        .card-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 12px;
+            border-top: 1px solid var(--border);
+        }
+
+        .price {
+            font-size: 1.3rem;
+            font-weight: 800;
+        }
+
+        .price-old {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            text-decoration: line-through;
+            margin-right: 6px;
+        }
+
+        .btn-buy {
+            background: var(--accent);
+            color: var(--tg-theme-button-text-color, white);
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.85rem;
+        }
+
+        /* Brand Colors */
+        .bg-delimobil { background: linear-gradient(135deg, #e53935, #ff7043); }
+        .bg-yandex { background: linear-gradient(135deg, #fbc02d, #ff9800); }
+        .bg-citydrive { background: linear-gradient(135deg, #1976d2, #42a5f5); }
+        .bg-car7 { background: linear-gradient(135deg, #6a1b9a, #ab47bc); }
+        .bg-belka { background: linear-gradient(135deg, #00897b, #26a69a); }
+        .bg-voron { background: linear-gradient(135deg, #212121, #616161); border-bottom: 3px solid var(--premium); }
+        .bg-easydrive { background: linear-gradient(135deg, #0277bd, #29b6f6); }
+        .bg-anytime { background: linear-gradient(135deg, #c62828, #ef5350); }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            padding: 16px;
+        }
+
+        .modal.active { display: flex; }
+
+        .modal-content {
+            background: var(--card-bg);
+            border-radius: 12px;
+            max-width: 500px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            border: 1px solid var(--border);
+        }
+
+        .modal-header {
+            padding: 16px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            color: var(--text-main);
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+
+        .modal-body { padding: 16px; }
+
+        .cart-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .cart-item-info h4 {
+            margin-bottom: 4px;
+            font-size: 0.95rem;
+        }
+
+        .cart-item-info p {
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+        }
+
+        .remove-btn {
+            background: none;
+            border: none;
+            color: #ef4444;
+            cursor: pointer;
+            font-size: 1.2rem;
+        }
+
+        .cart-total {
+            padding: 16px 0;
+            display: flex;
+            justify-content: space-between;
+            font-size: 1.2rem;
+            font-weight: 700;
+        }
+
+        .empty-cart {
+            text-align: center;
+            padding: 32px 16px;
+            color: var(--text-secondary);
+        }
+
+        /* Notification */
+        .notification {
+            position: fixed;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: var(--success);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            transition: 0.4s;
+            z-index: 2000;
+            font-size: 0.9rem;
+        }
+
+        .notification.show {
+            transform: translateX(-50%) translateY(0);
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="logo">
+            <div class="logo-icon">🚗</div>
+            Car<span>Share</span>
+        </div>
+        <button class="cart-btn" onclick="openCart()">
+            🛒 <span class="cart-count" id="cartCount">0</span>
+        </button>
+    </header>
+
+    <section class="hero">
+        <h1>Готовые <span>аккаунты</span></h1>
+        <p>Делимобиль, Яндекс Драйв, Ситидрайв и другие. Моментальная выдача, гарантия 30 дней.</p>
+        <div class="hero-stats">
+            <div class="stat-item">
+                <div class="stat-number">15K+</div>
+                <div class="stat-label">Продаж</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">24/7</div>
+                <div class="stat-label">Поддержка</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">100%</div>
+                <div class="stat-label">Гарантия</div>
+            </div>
+        </div>
+    </section>
+
+    <section class="catalog-section">
+        <h2 class="section-title">Каталог</h2>
+        
+        <div class="filters">
+            <button class="filter-btn active" onclick="filterProducts('all', this)">Все</button>
+            <button class="filter-btn" onclick="filterProducts('standard', this)">Обычные</button>
+            <button class="filter-btn" onclick="filterProducts('premium', this)">Премиум</button>
+            <button class="filter-btn" onclick="filterProducts('delimobil', this)">Делимобиль</button>
+            <button class="filter-btn" onclick="filterProducts('yandex', this)">Яндекс</button>
+        </div>
+
+        <div class="grid" id="productGrid"></div>
+    </section>
+
+    <!-- Модальное окно корзины -->
+    <div class="modal" id="cartModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>🛒 Корзина</h2>
+                <button class="close-btn" onclick="closeCart()">×</button>
+            </div>
+            <div class="modal-body" id="cartBody"></div>
+        </div>
+    </div>
+
+    <!-- Уведомление -->
+    <div class="notification" id="notification">✓ Добавлено в корзину</div>
+
+    <script>
+        // Инициализация Telegram Web App
+        const tg = window.Telegram.WebApp;
+        tg.ready();
+        tg.expand();
+
+        // Вибрация при действиях
+        function hapticFeedback() {
+            if (tg.HapticFeedback) {
+                tg.HapticFeedback.impactOccurred('light');
+            }
+        }
+
+        // Каталог товаров
+        const products = [
+            {
+                id: 1,
+                name: "Делимобиль",
+                type: "standard",
+                category: "delimobil",
+                title: "Делимобиль (Обычный)",
+                description: "Стандартный аккаунт с доступом к эконом-классу.",
+                features: ["VW Polo", "Skoda Rapid", "Kia Rio"],
+                price: 399,
+                oldPrice: 699,
+                bgClass: "bg-delimobil"
+            },
+            {
+                id: 2,
+                name: "Делимобиль Plus",
+                type: "premium",
+                category: "delimobil",
+                title: "Делимобиль Премиум",
+                description: "Премиум-аккаунт с доступом к бизнес-классу.",
+                features: ["BMW 3", "Kia K5", "Парковка"],
+                price: 1299,
+                oldPrice: 1999,
+                bgClass: "bg-delimobil"
+            },
+            {
+                id: 3,
+                name: "Яндекс Драйв",
+                type: "standard",
+                category: "yandex",
+                title: "Яндекс Драйв (Обычный)",
+                description: "Аккаунт с интеграцией в экосистему Яндекс.",
+                features: ["Фикс. цена", "Кэшбэк"],
+                price: 449,
+                oldPrice: 749,
+                bgClass: "bg-yandex"
+            },
+            {
+                id: 4,
+                name: "Яндекс Драйв Plus",
+                type: "premium",
+                category: "yandex",
+                title: "Яндекс Драйв Премиум",
+                description: "Премиум-тариф с VIP-поддержкой.",
+                features: ["Mercedes", "BMW 5", "Приоритет"],
+                price: 1599,
+                oldPrice: 2499,
+                bgClass: "bg-yandex"
+            },
+            {
+                id: 5,
+                name: "Ситидрайв",
+                type: "standard",
+                category: "other",
+                title: "Ситидрайв",
+                description: "Популярный сервис с выгодными тарифами.",
+                features: ["Chery", "Geely", "Москвич"],
+                price: 349,
+                oldPrice: 599,
+                bgClass: "bg-citydrive"
+            },
+            {
+                id: 6,
+                name: "Car7",
+                type: "standard",
+                category: "other",
+                title: "Car7",
+                description: "Удобный каршеринг с гибкой тарификацией.",
+                features: ["Haval", "Changan"],
+                price: 299,
+                oldPrice: 499,
+                bgClass: "bg-car7"
+            },
+            {
+                id: 7,
+                name: "Белка Кар",
+                type: "standard",
+                category: "other",
+                title: "Белка Кар",
+                description: "Надёжный сервис с хорошим страхованием.",
+                features: ["Renault", "Hyundai"],
+                price: 379,
+                oldPrice: 649,
+                bgClass: "bg-belka"
+            },
+            {
+                id: 8,
+                name: "Voron Premium",
+                type: "premium",
+                category: "other",
+                title: "Voron Premium",
+                description: "Эксклюзивный премиум-каршеринг.",
+                features: ["Audi A6", "Porsche"],
+                price: 2499,
+                oldPrice: 3999,
+                bgClass: "bg-voron"
+            },
+            {
+                id: 9,
+                name: "EasyDrive 24",
+                type: "standard",
+                category: "other",
+                title: "EasyDrive 24",
+                description: "Круглосуточный каршеринг.",
+                features: ["24/7", "Без залога"],
+                price: 329,
+                oldPrice: 549,
+                bgClass: "bg-easydrive"
+            },
+            {
+                id: 10,
+                name: "Anytime",
+                type: "standard",
+                category: "other",
+                title: "Anytime",
+                description: "Свобода и гибкость в передвижении.",
+                features: ["Без ограничений"],
+                price: 359,
+                oldPrice: 599,
+                bgClass: "bg-anytime"
+            }
+        ];
+
+        let cart = [];
+        let currentFilter = 'all';
+
+        // Рендеринг товаров
+        function renderProducts() {
+            const grid = document.getElementById('productGrid');
+            grid.innerHTML = '';
+
+            const filtered = products.filter(p => {
+                if (currentFilter === 'all') return true;
+                if (currentFilter === 'standard' || currentFilter === 'premium') {
+                    return p.type === currentFilter;
+                }
+                return p.category === currentFilter;
+            });
+
+            filtered.forEach(p => {
+                const card = document.createElement('div');
+                card.className = 'card';
+                card.innerHTML = `
+                    <div class="card-header ${p.bgClass}">
+                        ${p.name}
+                        <span class="badge ${p.type === 'premium' ? 'badge-premium' : 'badge-standard'}">
+                            ${p.type === 'premium' ? 'Премиум' : 'Обычный'}
+                        </span>
+                    </div>
+                    <div class="card-body">
+                        <h3 class="card-title">${p.title}</h3>
+                        <p class="card-desc">${p.description}</p>
+                        <div class="card-features">
+                            ${p.features.map(f => `<span class="feature-tag">${f}</span>`).join('')}
+                        </div>
+                        <div class="card-footer">
+                            <div>
+                                <span class="price-old">${p.oldPrice} ₽</span>
+                                <span class="price">${p.price} ₽</span>
+                            </div>
+                            <button class="btn-buy" onclick="addToCart(${p.id})">В корзину</button>
+                        </div>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        // Фильтрация
+        function filterProducts(filter, btn) {
+            currentFilter = filter;
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            hapticFeedback();
+            renderProducts();
+        }
+
+        // Корзина
+        function addToCart(id) {
+            const product = products.find(p => p.id === id);
+            const existing = cart.find(item => item.id === id);
+            
+            if (existing) {
+                existing.qty++;
+            } else {
+                cart.push({ ...product, qty: 1 });
+            }
+            
+            updateCartCount();
+            showNotification();
+            hapticFeedback();
+        }
+
+        function removeFromCart(id) {
+            cart = cart.filter(item => item.id !== id);
+            updateCartCount();
+            renderCart();
+            hapticFeedback();
+        }
+
+        function updateCartCount() {
+            const count = cart.reduce((sum, item) => sum + item.qty, 0);
+            document.getElementById('cartCount').textContent = count;
+        }
+
+        function openCart() {
+            renderCart();
+            document.getElementById('cartModal').classList.add('active');
+            hapticFeedback();
+        }
+
+        function closeCart() {
+            document.getElementById('cartModal').classList.remove('active');
+            hapticFeedback();
+        }
+
+        function renderCart() {
+            const body = document.getElementById('cartBody');
+            
+            if (cart.length === 0) {
+                body.innerHTML = `
+                    <div class="empty-cart">
+                        <div style="font-size: 2.5rem; margin-bottom: 12px;">🛒</div>
+                        <p>Корзина пуста</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const total = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
+            
+            body.innerHTML = `
+                ${cart.map(item => `
+                    <div class="cart-item">
+                        <div class="cart-item-info">
+                            <h4>${item.title}</h4>
+                            <p>${item.price} ₽ × ${item.qty} = <strong>${item.price * item.qty} ₽</strong></p>
+                        </div>
+                        <button class="remove-btn" onclick="removeFromCart(${item.id})">🗑️</button>
+                    </div>
+                `).join('')}
+                <div class="cart-total">
+                    <span>Итого:</span>
+                    <span>${total} ₽</span>
+                </div>
+            `;
+
+            // Показываем MainButton для оплаты
+            showMainButton(total);
+        }
+
+        // Telegram MainButton для оплаты
+        function showMainButton(total) {
+            tg.MainButton.setText(`Оплатить ${total} ₽`);
+            tg.MainButton.show();
+            tg.MainButton.onClick(() => {
+                checkout();
+            });
+        }
+
+        function hideMainButton() {
+            tg.MainButton.hide();
+        }
+
+        function checkout() {
+            const total = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
+            
+            // Отправляем данные боту
+            tg.sendData(JSON.stringify({
+                action: 'checkout',
+                items: cart,
+                total: total,
+                user: {
+                    id: tg.initDataUnsafe?.user?.id,
+                    username: tg.initDataUnsafe?.user?.username,
+                    first_name: tg.initDataUnsafe?.user?.first_name
+                }
+            }));
+
+            hapticFeedback();
+            hapticFeedback();
+        }
+
+        function showNotification() {
+            const notif = document.getElementById('notification');
+            notif.classList.add('show');
+            setTimeout(() => notif.classList.remove('show'), 2000);
+        }
+
+        // Закрытие модалки
+        document.getElementById('cartModal').addEventListener('click', (e) => {
+            if (e.target.id === 'cartModal') {
+                closeCart();
+                hideMainButton();
+            }
+        });
+
+        // Инициализация
+        renderProducts();
+    </script>
+</body>
+</html>
